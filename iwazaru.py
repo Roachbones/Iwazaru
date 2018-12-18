@@ -1,6 +1,7 @@
 #version 0.1
 
 import discord
+import sys
 
 client = discord.Client()
 
@@ -46,7 +47,7 @@ async def on_message(message):
         return
     if message.content == "shutdown" and message.author.id == "174636314019364864":
         # silence everyone, so that they can't say non-emoji while iwazaru is offline
-        client.delete_message(message)
+        await client.delete_message(message)
         server = client.get_server(SERVERID)
         default_role = server.default_role
         permissions = default_role.permissions
@@ -55,6 +56,7 @@ async def on_message(message):
         await client.send_message(client.get_channel(GENERALCHANNELID), "😴") #sleeping face emoji
         print("shutting down UwU")
         await client.logout()
+        return
     
     if not isvalid(message.content):
         # delete non-emoji messages
