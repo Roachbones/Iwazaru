@@ -5,7 +5,7 @@ import discord
 client = discord.Client()
 
 with open("token.txt", "r", encoding="utf-8") as opened:
-    TOKEN = opened.read()
+    TOKEN = opened.read().strip()
 with open("emojisurrogates.txt", "r", encoding="utf-8") as opened:
     EMOJISURROGATES = [i.strip() for i in opened.readlines()]
     #note: this might be harsh to regional pairs who lack ZWJs
