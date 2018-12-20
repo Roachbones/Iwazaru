@@ -2,6 +2,9 @@
 
 import discord
 import sys
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 client = discord.Client()
 
