@@ -1,4 +1,4 @@
-#version 0.2
+#version 0.21
 
 import discord
 import sys
@@ -47,7 +47,7 @@ async def on_message(message):
         reactionscleansed = 0
 
         async for message in client.logs_from(message.channel):
-            if not isvalid(message.content):
+            if (not isvalid(message.content)) or message.embeds:
                 await client.delete_message(message)
                 messagescleansed += 1
                 continue
@@ -62,7 +62,7 @@ async def on_message(message):
         logging.info("Done cleansing! :3\n  Messages deleted: {}\n  Reactions deleted: {}".format(messagescleansed, reactionscleansed))
         return
     
-    if not isvalid(message.content):
+    if (not isvalid(message.content)) or message.embeds:
         # delete non-emoji messages
         logging.info("Invalid message! Deleting! >.<")
         logging.debug(message.content)
@@ -74,7 +74,7 @@ async def on_message_edit(_, message): #we don't care about the before-message
         logging.info("Ignoring direct message edit. :P")
         # ignore DMs
         return
-    if not isvalid(message.content):
+    if (not isvalid(message.content)) or message.embeds:
         logging.info("Invalid message edit! Deleting! >.<")
         logging.debug(message.content)
         await client.delete_message(message)
