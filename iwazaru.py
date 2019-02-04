@@ -1,4 +1,4 @@
-#version 0.1
+#version 0.2
 
 import discord
 import sys
@@ -20,11 +20,8 @@ BONUSCHARS = [" ", "\n"]
 
 MORPHEMES = EMOJISURROGATES + EMOJINAMES + BONUSCHARS
 
-SERVERID = "523999837968924693"
-GENERALCHANNELID = "524040381323542528"
-
 def isvalid(text): #it's a tree! it's recursion! it's beautiful!
-    """Check is text is a valid emoji message (can be composed of substrings in MORPHEMES)."""
+    """Check if text is a valid emoji message (can be composed of substrings in MORPHEMES)."""
     if text == "":
         return True
     for m in MORPHEMES:
@@ -32,43 +29,69 @@ def isvalid(text): #it's a tree! it's recursion! it's beautiful!
             if isvalid(text[len(m):]):
                 return True
     return False
-def purgecheck(message):
-    """Checks if a message should be purged for the cleanse command."""
-    return not isvalid(message.content)
 
 @client.event
 async def on_message(message):
     if message.channel.is_private:
+        logging.info("Ignoring direct message. :P")
         # ignore DMs
         return
     
     if message.content == "cleanse":
         # purge non-emoji messages
-        print("cleansing...")
-        await client.purge_from(message.channel, limit=5000, check=purgecheck)
-        print("done cleansing! :3")
-        return
-    if message.content == "shutdown" and message.author.id == "174636314019364864":
-        # silence everyone, so that they can't say non-emoji while iwazaru is offline
+        logging.info("Cleansing... >-<")
+
         await client.delete_message(message)
-        server = client.get_server(SERVERID)
-        default_role = server.default_role
-        permissions = default_role.permissions
-        permissions.send_messages = False
-        await client.edit_role(server, default_role, permissions=permissions)
-        await client.send_message(client.get_channel(GENERALCHANNELID), "😴") #sleeping face emoji
-        print("shutting down UwU")
-        await client.logout()
+        
+        messagescleansed = 0
+        reactionscleansed = 0
+
+        async for message in client.logs_from(message.channel):
+            if not isvalid(message.content):
+                await client.delete_message(message)
+                messagescleansed += 1
+                continue
+            for reaction in message.reactions:
+                #is this really the way to mass-remove specific reactions? it seems kind of bad
+                if reaction.custom_emoji or not isvalid(reaction.emoji):
+                    print(client.get_reaction_users(reaction))
+                    for user in await client.get_reaction_users(reaction):
+                        await client.remove_reaction(message, reaction.emoji, user)
+                    reactionscleansed += 1
+
+        logging.info("Done cleansing! :3\n  Messages deleted: {}\n  Reactions deleted: {}".format(messagescleansed, reactionscleansed))
         return
     
     if not isvalid(message.content):
         # delete non-emoji messages
+        logging.info("Invalid message! Deleting! >.<")
+        logging.debug(message.content)
         await client.delete_message(message)
 
 @client.event
-async def on_message_edit(_, message):
+async def on_message_edit(_, message): #we don't care about the before-message
+    if message.channel.is_private:
+        logging.info("Ignoring direct message edit. :P")
+        # ignore DMs
+        return
     if not isvalid(message.content):
+        logging.info("Invalid message edit! Deleting! >.<")
+        logging.debug(message.content)
         await client.delete_message(message)
+
+@client.event
+async def on_reaction_add(reaction, user):
+    #basically, no nitro reactions and no regional indicator reactions.
+    if reaction.message.channel.is_private:
+        logging.info("Ignoring direct message reaction. :P")
+        # ignore DMs
+        return
+    logging.debug("Reaction added!")
+    if reaction.custom_emoji or not isvalid(reaction.emoji):
+        logging.info("That was a bad reaction! Removing...! >.<")
+        logging.info(reaction.emoji)
+        await client.remove_reaction(reaction.message, reaction.emoji, user)
+
 
 
 @client.event
@@ -76,11 +99,6 @@ async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
-    print('------')
-    server = client.get_server(SERVERID)
-    default_role = server.default_role
-    permissions = default_role.permissions
-    permissions.send_messages = True
-    await client.edit_role(server, default_role, permissions=permissions)
+    print('--------')
 
 client.run(TOKEN)
