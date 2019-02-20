@@ -1,7 +1,6 @@
-#version 0.21
+#version 0.22
 
 import discord
-import sys
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -32,9 +31,8 @@ def isvalid(text): #it's a tree! it's recursion! it's beautiful!
 
 @client.event
 async def on_message(message):
-    if message.channel.is_private:
-        logging.info("Ignoring direct message. :P")
-        # ignore DMs
+    if message.channel.is_private or not message.channel.permissions_for(message.server.me).manage_messages:
+        logging.info("Ignoring message in restricted channel. u_u")
         return
     
     if message.content == "cleanse":
@@ -70,8 +68,8 @@ async def on_message(message):
 
 @client.event
 async def on_message_edit(_, message): #we don't care about the before-message
-    if message.channel.is_private:
-        logging.info("Ignoring direct message edit. :P")
+    if message.channel.is_private or not message.channel.permissions_for(message.server.me).manage_messages:
+        logging.info("Ignoring message edit in restricted channel. u_u")
         # ignore DMs
         return
     if (not isvalid(message.content)) or message.embeds:
@@ -82,11 +80,11 @@ async def on_message_edit(_, message): #we don't care about the before-message
 @client.event
 async def on_reaction_add(reaction, user):
     #basically, no nitro reactions and no regional indicator reactions.
-    if reaction.message.channel.is_private:
-        logging.info("Ignoring direct message reaction. :P")
+    logging.debug("Reaction added!")
+    if reaction.message.channel.is_private or not reaction.message.channel.permissions_for(reaction.message.server.me).manage_messages:
+        logging.info("Ignoring reaction in restricted channel. u_u")
         # ignore DMs
         return
-    logging.debug("Reaction added!")
     if reaction.custom_emoji or not isvalid(reaction.emoji):
         logging.info("That was a bad reaction! Removing...! >.<")
         logging.info(reaction.emoji)
