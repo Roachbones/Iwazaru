@@ -7,3 +7,5 @@ Allowed morphemes (characters for composing messages) are all standard discord e
 Immediately deletes any sent or edited message that isn't solely composed of the allowed morphemes. Also removes any reaction whose emoji isn't a valid morpheme.
 
 There is one command: if you say "cleanse", then Iwazaru will delete all recent messages, and reactions on those messages, that are not allowed. This can be useful if the bot goes offline temporarily.
+
+Join the discord server: https://discord.gg/uHtVgCR
