@@ -1,4 +1,4 @@
-#version 0.22
+#version 1.0
 
 import discord
 import logging
@@ -31,7 +31,7 @@ def isvalid(text): #it's a tree! it's recursion! it's beautiful!
 
 @client.event
 async def on_message(message):
-    if message.channel.is_private or not message.channel.permissions_for(message.server.me).manage_messages:
+    if not (message.guild and message.channel.permissions_for(message.guild.me).manage_messages):
         logging.info("Ignoring message in restricted channel. u_u")
         return
     
@@ -39,22 +39,21 @@ async def on_message(message):
         # purge non-emoji messages
         logging.info("Cleansing... >-<")
 
-        await client.delete_message(message)
+        await message.delete()
         
         messagescleansed = 0
         reactionscleansed = 0
 
-        async for message in client.logs_from(message.channel):
+        async for message in message.channel.history():
             if (not isvalid(message.content)) or message.embeds:
-                await client.delete_message(message)
+                await message.delete()
                 messagescleansed += 1
                 continue
             for reaction in message.reactions:
                 #is this really the way to mass-remove specific reactions? it seems kind of bad
                 if reaction.custom_emoji or not isvalid(reaction.emoji):
-                    print(client.get_reaction_users(reaction))
-                    for user in await client.get_reaction_users(reaction):
-                        await client.remove_reaction(message, reaction.emoji, user)
+                    for user in await reaction.users().flatten():
+                        await reaction.remove(user)
                     reactionscleansed += 1
 
         logging.info("Done cleansing! :3\n  Messages deleted: {}\n  Reactions deleted: {}".format(messagescleansed, reactionscleansed))
@@ -64,39 +63,37 @@ async def on_message(message):
         # delete non-emoji messages
         logging.info("Invalid message! Deleting! >.<")
         logging.debug(message.content)
-        await client.delete_message(message)
+        await message.delete()
 
 @client.event
 async def on_message_edit(_, message): #we don't care about the before-message
-    if message.channel.is_private or not message.channel.permissions_for(message.server.me).manage_messages:
+    if not (message.guild and message.channel.permissions_for(message.guild.me).manage_messages):
         logging.info("Ignoring message edit in restricted channel. u_u")
         # ignore DMs
         return
     if (not isvalid(message.content)) or message.embeds:
         logging.info("Invalid message edit! Deleting! >.<")
         logging.debug(message.content)
-        await client.delete_message(message)
+        await message.delete()
 
 @client.event
 async def on_reaction_add(reaction, user):
     #basically, no nitro reactions and no regional indicator reactions.
     logging.debug("Reaction added!")
-    if reaction.message.channel.is_private or not reaction.message.channel.permissions_for(reaction.message.server.me).manage_messages:
+    if not (reaction.message.guild and reaction.message.channel.permissions_for(reaction.message.guild.me).manage_messages):
         logging.info("Ignoring reaction in restricted channel. u_u")
         # ignore DMs
         return
     if reaction.custom_emoji or not isvalid(reaction.emoji):
         logging.info("That was a bad reaction! Removing...! >.<")
         logging.info(reaction.emoji)
-        await client.remove_reaction(reaction.message, reaction.emoji, user)
-
-
+        await reaction.remove(user)
 
 @client.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('--------')
+    logging.info('Logged in as')
+    logging.info(client.user.name)
+    logging.info(client.user.id)
+    logging.info('--------')
 
 client.run(TOKEN)
