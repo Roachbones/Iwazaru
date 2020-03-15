@@ -9,23 +9,24 @@ with open("token.txt", "r", encoding="utf-8") as opened:
     TOKEN = opened.read().strip()
 with open("emojisurrogates.txt", "r", encoding="utf-8") as opened:
     EMOJISURROGATES = [i.strip() for i in opened.readlines()]
-    #note: this might be harsh to regional pairs who lack ZWJs
-    #they are supposed to be ZWJed but i think sometimes they aren't
 with open("emojinames.txt", "r", encoding="utf-8") as opened:
     EMOJINAMES = [":"+i.strip()+":" for i in opened.readlines()]
 BONUSCHARS = [" ", "\n"]
 
 MORPHEMES = EMOJISURROGATES + EMOJINAMES + BONUSCHARS
 
-def isvalid(text): #it's a tree! it's recursion! it's beautiful!
-    """Check if text is a valid emoji message (can be composed of substrings in MORPHEMES)."""
+def made_of_emoji(text): #it's recursion! it's beautiful!
+    """Check if text is valid emoji message content (can be composed of substrings in MORPHEMES)."""
     if text == "":
         return True
     for m in MORPHEMES:
         if text.startswith(m):
-            if isvalid(text[len(m):]):
+            if made_of_emoji(text[len(m):]):
                 return True
     return False
+def message_is_valid(message):
+    """Valid messages have emoji-only content and no embeds."""
+    return made_of_emoji(message.content) and not message.embeds
 
 @client.event
 async def on_message(message):
@@ -43,13 +44,13 @@ async def on_message(message):
         reactionscleansed = 0
 
         async for message in message.channel.history():
-            if (not isvalid(message.content)) or message.embeds:
+            if not message_is_valid(message):
                 await message.delete()
                 messagescleansed += 1
                 continue
             for reaction in message.reactions:
                 #is this really the way to mass-remove specific reactions? it seems kind of bad
-                if reaction.custom_emoji or not isvalid(reaction.emoji):
+                if reaction.custom_emoji or not made_of_emoji(reaction.emoji):
                     for user in await reaction.users().flatten():
                         await reaction.remove(user)
                     reactionscleansed += 1
@@ -57,10 +58,10 @@ async def on_message(message):
         logging.info("Done cleansing! :3\n  Messages deleted: {}\n  Reactions deleted: {}".format(messagescleansed, reactionscleansed))
         return
     
-    if (not isvalid(message.content)) or message.embeds:
+    if not message_is_valid(message):
         # delete non-emoji messages
         logging.info("Invalid message! Deleting! >.<")
-        logging.debug(message.content)
+        logging.info(message.content)
         await message.delete()
 
 @client.event
@@ -69,7 +70,7 @@ async def on_message_edit(_, message): #we don't care about the before-message
         logging.info("Ignoring message edit in restricted channel. u_u")
         # ignore DMs
         return
-    if (not isvalid(message.content)) or message.embeds:
+    if message_is_valid(message):
         logging.info("Invalid message edit! Deleting! >.<")
         logging.debug(message.content)
         await message.delete()
@@ -82,7 +83,7 @@ async def on_reaction_add(reaction, user):
         logging.info("Ignoring reaction in restricted channel. u_u")
         # ignore DMs
         return
-    if reaction.custom_emoji or not isvalid(reaction.emoji):
+    if reaction.custom_emoji or not made_of_emoji(reaction.emoji):
         logging.info("That was a bad reaction! Removing...! >.<")
         logging.info(reaction.emoji)
         await reaction.remove(user)
