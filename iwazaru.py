@@ -5,15 +5,13 @@ logging.basicConfig(level=logging.INFO)
 
 client = discord.Client()
 
-with open("token.txt", "r", encoding="utf-8") as opened:
-    TOKEN = opened.read().strip()
-with open("emojisurrogates.txt", "r", encoding="utf-8") as opened:
-    EMOJISURROGATES = [i.strip() for i in opened.readlines()]
-with open("emojinames.txt", "r", encoding="utf-8") as opened:
-    EMOJINAMES = [":"+i.strip()+":" for i in opened.readlines()]
-BONUSCHARS = [" ", "\n"]
+with open("token.txt", "r", encoding="utf-8") as file:
+    TOKEN = file.read().strip()
+with open("emoji_surrogates.txt", "r", encoding="utf-8") as file:
+    EMOJI_SURROGATES = file.read().split("\n")
+BONUS_CHARS = [" ", "\n"]
 
-MORPHEMES = EMOJISURROGATES + EMOJINAMES + BONUSCHARS
+MORPHEMES = EMOJI_SURROGATES + BONUS_CHARS
 
 def made_of_emoji(text): #it's recursion! it's beautiful!
     """Check if text is valid emoji message content (can be composed of substrings in MORPHEMES)."""
