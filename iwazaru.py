@@ -59,6 +59,7 @@ async def on_message(message):
     if not message_is_valid(message):
         # delete non-emoji messages
         logging.info("Invalid message! Deleting! >.<")
+        logging.info(message.author)
         logging.info(message.content)
         await message.delete()
 
