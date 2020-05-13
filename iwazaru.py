@@ -69,7 +69,7 @@ async def on_message_edit(_, message): #we don't care about the before-message
         logging.info("Ignoring message edit in restricted channel. u_u")
         # ignore DMs
         return
-    if message_is_valid(message):
+    if not message_is_valid(message):
         logging.info("Invalid message edit! Deleting! >.<")
         logging.debug(message.content)
         await message.delete()
